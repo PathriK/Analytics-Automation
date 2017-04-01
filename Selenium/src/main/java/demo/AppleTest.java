@@ -1,11 +1,17 @@
 package demo;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.Proxy;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.remote.DesiredCapabilities;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -13,6 +19,9 @@ import com.google.gson.JsonParser;
 
 public class AppleTest {
 
+	private static final String proxURL = "http://127.0.0.1:8080/";
+	private static enum ProxyAction { START, STOP };
+	
 	private static WebDriver driver;
 
 	public static void main(String[] args) {
@@ -30,7 +39,14 @@ public class AppleTest {
 	private static void driverInit() {
 		String chromeDriverPath = AppleTest.class.getResource("/chromedriver.exe").getPath();
 		System.setProperty("webdriver.chrome.driver", chromeDriverPath);
-		driver = new ChromeDriver();
+		
+		DesiredCapabilities capabilities = DesiredCapabilities.chrome();
+		// Add the WebDriver proxy capability.
+		Proxy proxy = new Proxy();
+		proxy.setHttpProxy("127.0.0.1:8080");
+		capabilities.setCapability("proxy", proxy);
+		
+		driver = new ChromeDriver(capabilities);
 	}
 
 	private static void testPageLoad() {
@@ -99,12 +115,43 @@ public class AppleTest {
 	}
 
 	private static void triggerCapture() {
-		// TODO Auto-generated method stub
-
+		messageProxy(ProxyAction.START);
 	}
 
 	private static JsonArray getCaptured() {
-		return (JsonArray) (new JsonParser()).parse("[{'pageName':'mac - index'}]");
+		String analyticsData = messageProxy(ProxyAction.STOP);
+		return (JsonArray)new JsonParser().parse(analyticsData);
+	}
+	
+	private static String messageProxy(ProxyAction proxyAction ){
+		String url = proxURL + proxyAction.toString().toLowerCase();
+
+		try{
+			URL obj = new URL(url);
+			HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+	
+			// optional default is GET
+			con.setRequestMethod("GET");
+	
+//			int responseCode = con.getResponseCode();
+			
+			BufferedReader in = new BufferedReader(
+			        new InputStreamReader(con.getInputStream()));
+			String inputLine;
+			StringBuffer response = new StringBuffer();
+	
+			while ((inputLine = in.readLine()) != null) {
+				response.append(inputLine);
+			}
+			in.close();
+	
+			//print result
+//			System.out.println("Response" + response.toString());		
+			return response.toString();
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return "";
 	}
 
 }

@@ -1,7 +1,39 @@
 var http = require('http');
+var url = require('url');
+
+var shouldRecord = true;
+var analyticsData = [];
 
 http.createServer((request, response) => {
-	console.log(request.connection.remoteAddress + ": " + request.method + " " + request.url);
+	let targetHost = request.headers['host'];
+	let parsed = url.parse(request.url,true);
+		
+	if(targetHost === '127.0.0.1:8080' || targetHost === 'localhost:8080'){		
+		if(request.url === '/start'){
+			console.log('starting capture');
+			shouldRecord = true;
+			analyticsData = [];
+			request.on('data', (chunk) => {});
+			request.on('end', (chunk) => {
+				response.writeHead('200');
+				response.end();
+			});			
+		}else{
+			console.log('stoping capture');
+			shouldRecord = false;
+			request.on('data', (chunk) => {});
+			request.on('end', (chunk) => {
+				response.writeHead('200');
+				response.write(JSON.stringify(analyticsData), 'binary');
+				response.end();
+			});						
+		}
+		return;		
+	}
+	
+	if("metrics.apple.com" === targetHost && shouldRecord){		
+		analyticsData.push(parsed.query);
+	}
 
 	var options = {
 		port: 80,
