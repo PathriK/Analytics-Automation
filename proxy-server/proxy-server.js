@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 var http = require('http');
 var net = require('net');
  
@@ -5,7 +7,7 @@ var debugging = 0;
  
 var regex_hostport = /^([^:]+)(:([0-9]+))?$/;
  
-function getHostPortFromString( hostString, defaultPort ) {
+var getHostPortFromString = function ( hostString, defaultPort ) {
   var host = hostString;
   var port = defaultPort;
  
@@ -21,7 +23,7 @@ function getHostPortFromString( hostString, defaultPort ) {
 }
  
 // handle a HTTP proxy request
-function httpUserRequest( userRequest, userResponse ) {
+var httpUserRequest = function ( userRequest, userResponse ) {
   if ( debugging ) {
     console.log( '  > request: %s', userRequest.url );
   }
@@ -123,26 +125,30 @@ function httpUserRequest( userRequest, userResponse ) {
   );
 }
  
-function main() {
+var main = function (argPort, argDebug) {
   var port = 5555; // default port if none on command line
  
   // check for any command line arguments
-  for ( var argn = 2; argn < process.argv.length; argn++ ) {
-    if ( process.argv[argn] === '-p' ) {
-      port = parseInt( process.argv[argn + 1] );
-      argn++;
-      continue;
-    }
+  // for ( var argn = 2; argn < process.argv.length; argn++ ) {
+    // if ( process.argv[argn] === '-p' ) {
+      // port = parseInt( process.argv[argn + 1] );
+      // argn++;
+      // continue;
+    // }
  
-    if ( process.argv[argn] === '-d' ) {
-      debugging = 1;
-      continue;
-    }
-  }
- 
-  if ( debugging ) {
+    // if ( process.argv[argn] === '-d' ) {
+      // debugging = 1;
+      // continue;
+    // }
+  // }
+ if(argPort)
+	port = argPort;
+ if(argDebug)
+	debugging = 1
+
+  //if ( debugging ) {
     console.log( 'server listening on port ' + port );
-  }
+  //}
  
   // start HTTP server with custom request handler callback function
   var server = http.createServer( httpUserRequest ).listen(port);
@@ -241,4 +247,8 @@ function main() {
   ); // HTTPS connect listener
 }
  
-main();
+//main();
+
+module.exports = {
+	start: main
+}

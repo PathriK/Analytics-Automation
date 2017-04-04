@@ -1,0 +1,28 @@
+{
+  "name": "proxy-server",
+  "version": "1.0.0",
+  "description": "Simple Proxy Server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+	"start-proxy": "./start-proxy.js",
+	"debug-proxy": "./debug-proxy.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PathriK/Analytics-Automation.git"
+  },
+  "keywords": [
+    "proxy",
+    "http",
+    "https"
+  ],
+  "author": "PathriK",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/PathriK/Analytics-Automation/issues"
+  },
+  "homepage": "https://github.com/PathriK/Analytics-Automation#readme"
+}
