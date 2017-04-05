@@ -2,10 +2,15 @@
 
 var http = require('http');
 var net = require('net');
+var url = require('url');
  
 var debugging = 0;
  
 var regex_hostport = /^([^:]+)(:([0-9]+))?$/;
+
+var shouldRecord = true;
+var analyticsData = [];
+
  
 var getHostPortFromString = function ( hostString, defaultPort ) {
   var host = hostString;
@@ -41,6 +46,39 @@ var httpUserRequest = function ( userRequest, userResponse ) {
       path = "/";
     }
   }
+  	let parsed = url.parse(userRequest.url,true);
+
+    if ( debugging ) {
+    console.log( '  > before filter: %s', hostport[0], path );
+  }
+
+  if(hostport[0]=== '127.0.0.1' || hostport[0]=== 'localhost'){
+	if(path === '/start'){ //Handling 'start' request from Selenium
+		console.log('starting capture');
+		shouldRecord = true;
+		analyticsData = [];
+		userRequest.on('data', (chunk) => {}); //No data is expected in 'start' request so ignoring
+		userRequest.on('end', (chunk) => { //Empty success response
+			userResponse.writeHead('200');
+			userResponse.end();
+		});			
+	}else{
+		console.log('stoping capture'); //Handle for 'stop' request from Selenium
+		shouldRecord = false;
+		userRequest.on('data', (chunk) => {}); //No data is expected in 'stop' request so ignoring
+		userRequest.on('end', (chunk) => {
+			userResponse.writeHead('200');
+			userResponse.write(JSON.stringify(analyticsData), 'binary'); //Writing the captured Analytics data as response
+			analyticsData = [];
+			userResponse.end();
+		});						
+	}
+	return;		
+  }	  
+  
+  if("metrics.apple.com" === hostport[0] && shouldRecord){	//Capturing the Analytics data
+	analyticsData.push(parsed.query);
+  }
  
   var options = {
     'host': hostport[0],
@@ -53,7 +91,7 @@ var httpUserRequest = function ( userRequest, userResponse ) {
   };
  
   if ( debugging ) {
-    console.log( '  > options: %s', JSON.stringify( options, null, 2 ) );
+    //console.log( '  > options: %s', JSON.stringify( options, null, 2 ) );
   }
  
   var proxyRequest = http.request(

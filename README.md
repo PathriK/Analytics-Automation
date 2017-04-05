@@ -15,10 +15,12 @@ Verifying analytics call using proxy(node.js) and Selenium
 # Steps to view the Demo:
 1. Clone or download the Repo to local
 2. Navigate to 'Server' folder in command prompt
-3. Run command 'node index.js' and wait for prompt 'server listening on 8080'
-4. Import 'Selenium' folder to Eclipse. It is a maven project.
-5. Do Maven update to download maven dependencies
-6. Run the project as a Java Project
+3. Run command 'npm install -g'
+4. After successful install, we have two commands (details below)
+5. Run command desired command and wait for prompt 'server listening on 8080'
+6. Import 'Selenium' folder to Eclipse. It is a maven project.
+7. Do Maven update to download maven dependencies
+8. Run the project as a Java Project
 
 # Selenium Flow:
 1. Driver initialization with proxy details
@@ -31,6 +33,11 @@ Verifying analytics call using proxy(node.js) and Selenium
 8. Send 'stop' signal and get captured analytics data from Proxy
 9. Parse and validate the captured data, that pageName is 'mac'
 10. End Test
+
+# Commands Available:
+__start-proxy:__ Starts the proxy at port 8080 without any debug logs
+
+__debug-proxy:__ Same as start-proxy but logs console with debug infos
 
 # Developer Contact
 pathrikumark@gmail.com
