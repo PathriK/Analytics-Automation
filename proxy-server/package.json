@@ -1,6 +1,6 @@
 {
   "name": "proxy-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Simple Proxy Server",
   "main": "index.js",
   "scripts": {

@@ -1,22 +1,25 @@
-#!/usr/bin/env node
+"use strict";
 
-var http = require('http');
-var net = require('net');
-var url = require('url');
- 
-var debugging = 0;
- 
-var regex_hostport = /^([^:]+)(:([0-9]+))?$/;
 
-var shouldRecord = true;
-var analyticsData = [];
+let http = require('http');
+let net = require('net');
+let url = require('url');
 
  
-var getHostPortFromString = function ( hostString, defaultPort ) {
-  var host = hostString;
-  var port = defaultPort;
+let debugging = 0;
  
-  var result = regex_hostport.exec( hostString );
+let regex_hostport = /^([^:]+)(:([0-9]+))?$/;
+
+let shouldRecord = true;
+let analyticsData = [];
+let metricsDomain = "";
+
+ 
+let getHostPortFromString = function ( hostString, defaultPort ) {
+  let host = hostString;
+  let port = defaultPort;
+ 
+  let result = regex_hostport.exec( hostString );
   if ( result != null ) {
     host = result[1];
     if ( result[2] != null ) {
@@ -28,17 +31,17 @@ var getHostPortFromString = function ( hostString, defaultPort ) {
 }
  
 // handle a HTTP proxy request
-var httpUserRequest = function ( userRequest, userResponse ) {
+let httpUserRequest = function ( userRequest, userResponse ) {
   if ( debugging ) {
     console.log( '  > request: %s', userRequest.url );
   }
  
-  var httpVersion = userRequest['httpVersion'];
-  var hostport = getHostPortFromString( userRequest.headers['host'], 80 );
+  let httpVersion = userRequest['httpVersion'];
+  let hostport = getHostPortFromString( userRequest.headers['host'], 80 );
  
   // have to extract the path from the requested URL
-  var path = userRequest.url;
-  result = /^[a-zA-Z]+:\/\/[^\/]+(\/.*)?$/.exec( userRequest.url );
+  let path = userRequest.url;
+  let result = /^[a-zA-Z]+:\/\/[^\/]+(\/.*)?$/.exec( userRequest.url );
   if ( result ) {
     if ( result[1].length > 0 ) {
       path = result[1];
@@ -55,8 +58,11 @@ var httpUserRequest = function ( userRequest, userResponse ) {
   if(hostport[0]=== '127.0.0.1' || hostport[0]=== 'localhost'){
 	if(path === '/start'){ //Handling 'start' request from Selenium
 		console.log('starting capture');
+		if( debugging )
+			console.log(' headers: ', userRequest.headers);
 		shouldRecord = true;
 		analyticsData = [];
+		metricsDomain = userRequest.headers['metrics-domain'];
 		userRequest.on('data', (chunk) => {}); //No data is expected in 'start' request so ignoring
 		userRequest.on('end', (chunk) => { //Empty success response
 			userResponse.writeHead('200');
@@ -76,11 +82,11 @@ var httpUserRequest = function ( userRequest, userResponse ) {
 	return;		
   }	  
   
-  if("metrics.apple.com" === hostport[0] && shouldRecord){	//Capturing the Analytics data
+  if(shouldRecord && metricsDomain != "" && metricsDomain === hostport[0]){	//Capturing the Analytics data
 	analyticsData.push(parsed.query);
   }
  
-  var options = {
+  let options = {
     'host': hostport[0],
     'port': hostport[1],
     'method': userRequest.method,
@@ -94,7 +100,7 @@ var httpUserRequest = function ( userRequest, userResponse ) {
     //console.log( '  > options: %s', JSON.stringify( options, null, 2 ) );
   }
  
-  var proxyRequest = http.request(
+  let proxyRequest = http.request(
     options,
     function ( proxyResponse ) {
       if ( debugging ) {
@@ -163,56 +169,41 @@ var httpUserRequest = function ( userRequest, userResponse ) {
   );
 }
  
-var main = function (argPort, argDebug) {
-  var port = 5555; // default port if none on command line
- 
-  // check for any command line arguments
-  // for ( var argn = 2; argn < process.argv.length; argn++ ) {
-    // if ( process.argv[argn] === '-p' ) {
-      // port = parseInt( process.argv[argn + 1] );
-      // argn++;
-      // continue;
-    // }
- 
-    // if ( process.argv[argn] === '-d' ) {
-      // debugging = 1;
-      // continue;
-    // }
-  // }
+let main = function (argPort, argDebug) {
+  let port = 8080; // default port if none on command line
+
  if(argPort)
 	port = argPort;
  if(argDebug)
 	debugging = 1
 
-  //if ( debugging ) {
     console.log( 'server listening on port ' + port );
-  //}
  
   // start HTTP server with custom request handler callback function
-  var server = http.createServer( httpUserRequest ).listen(port);
+  let server = http.createServer( httpUserRequest ).listen(port);
  
   // add handler for HTTPS (which issues a CONNECT to the proxy)
   server.addListener(
     'connect',
     function ( request, socketRequest, bodyhead ) {
-      var url = request['url'];
-      var httpVersion = request['httpVersion'];
+      let url = request['url'];
+      let httpVersion = request['httpVersion'];
  
-      var hostport = getHostPortFromString( url, 443 );
+      let hostport = getHostPortFromString( url, 443 );
  
       if ( debugging )
         console.log( '  = will connect to %s:%s', hostport[0], hostport[1] );
  
       // set up TCP connection
-      var proxySocket = new net.Socket();
+      let proxySocket = new net.Socket();
       proxySocket.connect(
         parseInt( hostport[1] ), hostport[0],
         function () {
           if ( debugging )
             console.log( '  < connected to %s/%s', hostport[0], hostport[1] );
  
-          if ( debugging )
-            console.log( '  > writing head of length %d', bodyhead.length );
+          //if ( debugging )
+            //console.log( '  > writing head of length %d', bodyhead.length );
  
           proxySocket.write( bodyhead );
  
@@ -224,8 +215,8 @@ var main = function (argPort, argDebug) {
       proxySocket.on(
         'data',
         function ( chunk ) {
-          if ( debugging )
-            console.log( '  < data length = %d', chunk.length );
+          //if ( debugging )
+            //console.log( '  < data length = %d', chunk.length );
  
           socketRequest.write( chunk );
         }
@@ -244,8 +235,8 @@ var main = function (argPort, argDebug) {
       socketRequest.on(
         'data',
         function ( chunk ) {
-          if ( debugging )
-            console.log( '  > data length = %d', chunk.length );
+          //if ( debugging )
+            //console.log( '  > data length = %d', chunk.length );
  
           proxySocket.write( chunk );
         }

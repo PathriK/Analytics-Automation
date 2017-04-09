@@ -10,7 +10,7 @@ Verifying analytics call using proxy(node.js) and Selenium
 # Demo Parameters:
  __URL Used__: http://www.apple.com
 
- __Analytic URL__: metrics.apple.com (configured in index.js of Proxy Server)
+ __Analytic URL__: metrics.apple.com (configured in the Selenium/Java )
 
 # Steps to view the Demo:
 1. Clone or download the Repo to local
@@ -43,3 +43,15 @@ __debug-proxy:__ Same as start-proxy but logs console with debug infos
 pathrikumark@gmail.com
 
 https://gitter.im/PathriK
+
+# Change-log:
+
+v1.1.0:
+
+- Ability to configure metrics domain through Java (Selenium)
+- Separate class to handle proxy communication, making it easy to use it in other projects
+- Proxy script now shows the current version in console
+
+v1.0.0:
+
+- Initial Version

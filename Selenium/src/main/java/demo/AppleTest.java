@@ -1,9 +1,5 @@
 package demo;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.By;
@@ -15,18 +11,21 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+
+import analytics.automation.MessageProxy;
 
 public class AppleTest {
 
 	private static final String proxyHost = "127.0.0.1:8080";
-	private static final String proxURL = "http://" + proxyHost + "/";
-	private static enum ProxyAction { START, STOP };
+	private static final String metricsDomain = "metrics.apple.com";
+	private static MessageProxy messageProxy;
+
 	
 	private static WebDriver driver;
 
 	public static void main(String[] args) {
 		driverInit();
+		messageProxy = new MessageProxy(proxyHost, metricsDomain); //Initializing Message Proxy
 		try {
 			testPageLoad();
 			testPageNavigate();
@@ -51,17 +50,26 @@ public class AppleTest {
 	}
 
 	private static void testPageLoad() {
-		triggerCapture(); //Sends GET request to Proxy to make it start capturing Analytics call
+		messageProxy.startRecording(); //Sends GET request to Proxy to make it start capturing Analytics call
 		loadPage("http://www.apple.com/");
-		JsonArray formDatas = getCaptured(); //Receive the captured Analytics data from Proxy server
-		validate((JsonObject) formDatas.get(0), "PAGELOAD", "apple"); //Getting the first captured analytic call only for Demo purpose and validating it.
+		JsonArray formDatas = messageProxy.stopRecording(); //Receive the captured Analytics data from Proxy server
+		if(formDatas.isJsonArray() && formDatas.size() > 0){
+			validate((JsonObject) formDatas.get(0), "PAGELOAD", "apple"); //Getting the first captured analytic call only for Demo purpose and validating it.
+		}else{
+			customReport("ERROR", "Analytics Validation for PAGELOAD failed. Nothing was recorded");
+		}
+			
 	}
 
 	private static void testPageNavigate() {
-		triggerCapture(); //Sends GET request to Proxy to make it start capturing Analytics call
+		messageProxy.startRecording(); //Sends GET request to Proxy to make it start capturing Analytics call
 		navigatePage("MAC_LINK");
-		JsonArray formDatas = getCaptured(); //Receive the captured Analytics data from Proxy server
-		validate((JsonObject) formDatas.get(0), "PAGENAVIGATE", "mac"); //Validate the Analytics call. Does validation for a specific parameter only for Demo
+		JsonArray formDatas = messageProxy.stopRecording(); //Receive the captured Analytics data from Proxy server
+		if(formDatas.isJsonArray() && formDatas.size() > 0){
+			validate((JsonObject) formDatas.get(0), "PAGENAVIGATE", "mac"); //Validate the Analytics call. Does validation for a specific parameter only for Demo
+		}else{
+			customReport("ERROR", "Analytics Validation for PAGENAVIGATE failed. Nothing was recorded");
+		}
 	}
 
 	private static void validate(JsonObject formData, String validationType, String expectedValue) {
@@ -115,45 +123,4 @@ public class AppleTest {
 	private static void customReport(String status, String message) {
 		System.out.println(status + "::" + message);
 	}
-
-	private static void triggerCapture() {
-		messageProxy(ProxyAction.START); //Sends a GET request to proxy server: http://127.0.0.1/start
-	}
-
-	private static JsonArray getCaptured() {
-		String analyticsData = messageProxy(ProxyAction.STOP); //Sends a GET request to proxy server: http://127.0.0.1/stop and gets the data returned
-		return (JsonArray)new JsonParser().parse(analyticsData); //Parses the json string received into JSONArray
-	}
-	
-	private static String messageProxy(ProxyAction proxyAction ){
-		//Standard JAVA code to send GET Request
-		String url = proxURL + proxyAction.toString().toLowerCase();
-
-		try{
-			URL obj = new URL(url);
-			HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-	
-			// optional default is GET
-			con.setRequestMethod("GET");
-	
-//			int responseCode = con.getResponseCode();
-			
-			BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			String inputLine;
-			StringBuffer response = new StringBuffer();
-	
-			while ((inputLine = in.readLine()) != null) {
-				response.append(inputLine);
-			}
-			in.close();
-	
-			//print result
-//			System.out.println("Response" + response.toString());		
-			return response.toString();
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-		return "";
-	}
-
 }

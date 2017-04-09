@@ -1,4 +1,8 @@
 #!/usr/bin/env node
 
-var proxyServer = require("./proxy-server");
+"use strict";
+
+let proxyServer = require("./proxy-server");
+let pjson = require('./package.json');
+console.log( 'Analytics Proxy v' + pjson.version + '. Debug Disabled');
 proxyServer.start(8080, false);
