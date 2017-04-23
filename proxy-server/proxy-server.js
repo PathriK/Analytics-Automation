@@ -1,9 +1,9 @@
 "use strict";
 
-
-let http = require('http');
-let net = require('net');
-let url = require('url');
+const http = require('http');
+const net = require('net');
+const url = require('url');
+const querystring = require('querystring');
 
  
 let debugging = 0;
@@ -35,7 +35,7 @@ let httpUserRequest = function ( userRequest, userResponse ) {
   if ( debugging ) {
     console.log( '  > request: %s', userRequest.url );
   }
- 
+  const chunks = [];
   let httpVersion = userRequest['httpVersion'];
   let hostport = getHostPortFromString( userRequest.headers['host'], 80 );
  
@@ -82,7 +82,7 @@ let httpUserRequest = function ( userRequest, userResponse ) {
 	return;		
   }	  
   
-  if(shouldRecord && metricsDomain != "" && metricsDomain === hostport[0]){	//Capturing the Analytics data
+  if(shouldRecord && userRequest.method === "GET" && metricsDomain != "" && metricsDomain === hostport[0]){	//Capturing the Analytics data
 	analyticsData.push(parsed.query);
   }
  
@@ -157,6 +157,9 @@ let httpUserRequest = function ( userRequest, userResponse ) {
       if ( debugging ) {
         console.log( '  > chunk = %d bytes', chunk.length );
       }
+	  if(shouldRecord && userRequest.method === "POST" && metricsDomain != "" && metricsDomain === hostport[0]){		
+		chunks.push(chunk);
+	  }
       proxyRequest.write( chunk );
     }
   );
@@ -165,6 +168,10 @@ let httpUserRequest = function ( userRequest, userResponse ) {
     'end',
     function () {
       proxyRequest.end();
+	  if(shouldRecord && userRequest.method === "POST" && metricsDomain != "" && metricsDomain === hostport[0]){		
+		const queryData = Buffer.concat(chunks);
+		analyticsData.push(querystring.parse(queryData.toString()));
+	  }
     }
   );
 }
