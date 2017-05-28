@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>in.pathri.selenium.analytics-automation</groupId>
 	<artifactId>demo</artifactId>
-	<version>1.2.0-SNAPSHOT</version>
+	<version>1.3.0</version>
 	<name>Analytics Automation Demo</name>
 	<description>Analytics Automation Demo</description>
 	<dependencies>

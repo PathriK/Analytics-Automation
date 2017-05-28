@@ -8,9 +8,9 @@ Verifying analytics call using proxy(node.js) and Selenium
 - Chrome Browser (Selenium script written using Chrome Driver)
 
 # Demo Parameters:
- __URL Used__: http://www.apple.com
+ __URL Used__: http://www.samsung.com/in/
 
- __Analytic URL__: metrics.apple.com (configured in the Selenium/Java )
+ __Analytic URL__: nmetrics.samsung.com (configured in the Selenium/Java )
 
 # Steps to view the Demo:
 1. Clone or download the Repo to local
@@ -24,15 +24,16 @@ Verifying analytics call using proxy(node.js) and Selenium
 
 # Selenium Flow:
 1. Driver initialization with proxy details
-2. Send 'start' signal to proxy
-3. Load Apple site
-4. Send 'stop' signal and get captured analytics data from Proxy
-5. Parse and validate the captured data, that pageName is 'apple'
-6. Send 'start' signal to proxy
-7. Navigate to the MAC page
-8. Send 'stop' signal and get captured analytics data from Proxy
-9. Parse and validate the captured data, that pageName is 'mac'
-10. End Test
+2. Configure ProxyConfig with AnalyticsProxy host, metrics url regexp to capture, external proxy url (optional) & external proxy port (optional)
+3. Send 'start' signal to proxy
+4. Load Samsung site
+5. Send 'stop' signal and get captured analytics data from Proxy
+6. Parse and validate the captured data, that pageName is 'in:home'
+7. Send 'start' signal to proxy
+8. Navigate to the Support page
+9. Send 'stop' signal and get captured analytics data from Proxy
+10. Parse and validate the captured data, that pageName is 'in:support'
+11. End Test
 
 # Commands Available:
 __start-proxy:__ Starts the proxy at port 8080 without any debug logs
@@ -45,6 +46,17 @@ pathrikumark@gmail.com
 https://gitter.im/PathriK
 
 # Change-log:
+
+v1.3.0:
+
+- Changed demo to samsung.com/in (Apple shifted to using https for metrics call which is not supported by
+this utility. Hence the change)
+- Metrics URL can now be filtered based on Regular Expression (Javascript format)
+- Supports configuration of External proxy to use by the Analytics proxy tool
+
+v1.2.0:
+
+- Captures metrics call that is sent using POST
 
 v1.1.0:
 

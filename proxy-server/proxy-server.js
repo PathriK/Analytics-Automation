@@ -12,7 +12,8 @@ let regex_hostport = /^([^:]+)(:([0-9]+))?$/;
 
 let shouldRecord = true;
 let analyticsData = [];
-let metricsDomain = "";
+let filterRegex;
+let configData = {};
 
  
 let getHostPortFromString = function ( hostString, defaultPort ) {
@@ -40,6 +41,7 @@ let httpUserRequest = function ( userRequest, userResponse ) {
   let hostport = getHostPortFromString( userRequest.headers['host'], 80 );
  
   // have to extract the path from the requested URL
+  let appURL = userRequest.url;
   let path = userRequest.url;
   let result = /^[a-zA-Z]+:\/\/[^\/]+(\/.*)?$/.exec( userRequest.url );
   if ( result ) {
@@ -57,14 +59,21 @@ let httpUserRequest = function ( userRequest, userResponse ) {
 
   if(hostport[0]=== '127.0.0.1' || hostport[0]=== 'localhost'){
 	if(path === '/start'){ //Handling 'start' request from Selenium
+	let chunks = [];
 		console.log('starting capture');
 		if( debugging )
 			console.log(' headers: ', userRequest.headers);
 		shouldRecord = true;
 		analyticsData = [];
-		metricsDomain = userRequest.headers['metrics-domain'];
-		userRequest.on('data', (chunk) => {}); //No data is expected in 'start' request so ignoring
+		//metricsDomain = userRequest.headers['metrics-domain'];
+		userRequest.on('data', (chunk) => {chunks.push(chunk)}); //No data is expected in 'start' request so ignoring
 		userRequest.on('end', (chunk) => { //Empty success response
+			const configDataStr = Buffer.concat(chunks);
+			chunks = [];
+			configData = JSON.parse(configDataStr.toString());
+			if(configData.Filter){
+				filterRegex = new RegExp(configData.Filter,"i");
+			}
 			userResponse.writeHead('200');
 			userResponse.end();
 		});			
@@ -88,11 +97,25 @@ let httpUserRequest = function ( userRequest, userResponse ) {
 	return;		
   }	  
   
-  if(shouldRecord && userRequest.method === "GET" && metricsDomain != "" && metricsDomain === hostport[0]){	//Capturing the Analytics data
+  if(shouldRecord && userRequest.method === "GET" && filterRegex && filterRegex.test(hostport[0] + path)){	//Capturing the Analytics data
 	analyticsData.push(parsed.query);
   }
+ let options = {};
  
-  let options = {
+ if(configData.HasProxy){
+ 
+  options = {
+    'host': configData.ProxyURL,
+    'port': configData.ProxyPort,
+    'method': userRequest.method,
+    'path': appURL,
+    'agent': userRequest.agent,
+    'auth': userRequest.auth,
+    'headers': userRequest.headers
+  };
+ }else{
+
+  options = {
     'host': hostport[0],
     'port': hostport[1],
     'method': userRequest.method,
@@ -101,7 +124,7 @@ let httpUserRequest = function ( userRequest, userResponse ) {
     'auth': userRequest.auth,
     'headers': userRequest.headers
   };
- 
+ } 
   if ( debugging ) {
     //console.log( '  > options: %s', JSON.stringify( options, null, 2 ) );
   }
@@ -163,7 +186,7 @@ let httpUserRequest = function ( userRequest, userResponse ) {
       if ( debugging ) {
         console.log( '  > chunk = %d bytes', chunk.length );
       }
-	  if(shouldRecord && userRequest.method === "POST" && metricsDomain != "" && metricsDomain === hostport[0]){		
+	  if(shouldRecord && userRequest.method === "POST" && filterRegex && filterRegex.test(hostport[0] + path)){		
 		chunks.push(chunk);
 	  }
       proxyRequest.write( chunk );
@@ -174,7 +197,7 @@ let httpUserRequest = function ( userRequest, userResponse ) {
     'end',
     function () {
       proxyRequest.end();
-	  if(shouldRecord && userRequest.method === "POST" && metricsDomain != "" && metricsDomain === hostport[0]){		
+	  if(shouldRecord && userRequest.method === "POST" && filterRegex && filterRegex.test(hostport[0] + path)){		
 		const queryData = Buffer.concat(chunks);
 		analyticsData.push(querystring.parse(queryData.toString()));
 	  }

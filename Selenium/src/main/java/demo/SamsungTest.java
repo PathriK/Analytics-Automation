@@ -14,14 +14,17 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import analytics.automation.MessageProxy;
+import analytics.automation.ProxyConfig;
 
-public class AppleTest {
-
-	private static final String proxyHost = "127.0.0.1:8080";
-	private static final String metricsDomain = "nmetrics.samsung.com";
+public class SamsungTest {
+	private static final String analyticsProxyURL = "127.0.0.1:8080";
+	private static final String metricsFilter = ".*nmetrics.samsung.com.*";
+	private static final String proxyHost = "127.0.0.1";	
+	private static final String proxyPort = "8877";
 	private static final String homePage = "http://www.samsung.com/in/";
 	private static final String pageLoad = "in:home";
 	private static final String pageNavigate = "in:support";
+	
 	private static MessageProxy messageProxy;
 
 	
@@ -29,7 +32,12 @@ public class AppleTest {
 
 	public static void main(String[] args) {
 		driverInit();
-		messageProxy = new MessageProxy(proxyHost, metricsDomain); //Initializing Message Proxy
+		ProxyConfig proxyConfig = new ProxyConfig()
+				.setAnalyticsProxy(analyticsProxyURL)
+				.setFilterRegEx(metricsFilter)
+				.setProxyURL(proxyHost)
+				.setProxyPort(proxyPort);
+		messageProxy = new MessageProxy(proxyConfig); //Initializing Message Proxy
 		try {
 			testPageLoad();
 			testPageNavigate();
@@ -41,13 +49,13 @@ public class AppleTest {
 	}
 
 	private static void driverInit() {
-		String chromeDriverPath = AppleTest.class.getResource("/chromedriver.exe").getPath(); //Chrome Driver is in Resource folder of this project
+		String chromeDriverPath = SamsungTest.class.getResource("/chromedriver.exe").getPath(); //Chrome Driver is in Resource folder of this project
 		System.setProperty("webdriver.chrome.driver", chromeDriverPath);
 		
 		DesiredCapabilities capabilities = DesiredCapabilities.chrome();
 		// Add the WebDriver proxy capability.
 		Proxy proxy = new Proxy();
-		proxy.setHttpProxy(proxyHost);
+		proxy.setHttpProxy(analyticsProxyURL);
 		capabilities.setCapability("proxy", proxy); //Setting the proxy
 		
 		driver = new ChromeDriver(capabilities);
@@ -72,7 +80,6 @@ public class AppleTest {
 //		TimeUnit.SECONDS.sleep(10);
 		JsonArray formDatas = messageProxy.stopRecording(); //Receive the captured Analytics data from Proxy server
 		if(formDatas.isJsonArray() && formDatas.size() > 0){
-			int size = formDatas.size();
 			for (JsonElement jsonElement : formDatas) {
 				JsonObject obj = (JsonObject)jsonElement;
 				if(obj.has("events")){
