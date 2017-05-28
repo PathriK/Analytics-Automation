@@ -10,6 +10,7 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import analytics.automation.MessageProxy;
@@ -17,7 +18,10 @@ import analytics.automation.MessageProxy;
 public class AppleTest {
 
 	private static final String proxyHost = "127.0.0.1:8080";
-	private static final String metricsDomain = "metrics.apple.com";
+	private static final String metricsDomain = "nmetrics.samsung.com";
+	private static final String homePage = "http://www.samsung.com/in/";
+	private static final String pageLoad = "in:home";
+	private static final String pageNavigate = "in:support";
 	private static MessageProxy messageProxy;
 
 	
@@ -49,24 +53,35 @@ public class AppleTest {
 		driver = new ChromeDriver(capabilities);
 	}
 
-	private static void testPageLoad() {
+	private static void testPageLoad() throws InterruptedException {
 		messageProxy.startRecording(); //Sends GET request to Proxy to make it start capturing Analytics call
-		loadPage("http://www.apple.com/");
+		loadPage(homePage);
+//		TimeUnit.SECONDS.sleep(10);
 		JsonArray formDatas = messageProxy.stopRecording(); //Receive the captured Analytics data from Proxy server
 		if(formDatas.isJsonArray() && formDatas.size() > 0){
-			validate((JsonObject) formDatas.get(0), "PAGELOAD", "apple"); //Getting the first captured analytic call only for Demo purpose and validating it.
+			validate((JsonObject) formDatas.get(0), "PAGELOAD", pageLoad); //Getting the first captured analytic call only for Demo purpose and validating it.
 		}else{
 			customReport("ERROR", "Analytics Validation for PAGELOAD failed. Nothing was recorded");
 		}
 			
 	}
 
-	private static void testPageNavigate() {
+	private static void testPageNavigate() throws InterruptedException {
 		messageProxy.startRecording(); //Sends GET request to Proxy to make it start capturing Analytics call
-		navigatePage("MAC_LINK");
+		navigatePage("SUPPORT_LINK");
+//		TimeUnit.SECONDS.sleep(10);
 		JsonArray formDatas = messageProxy.stopRecording(); //Receive the captured Analytics data from Proxy server
 		if(formDatas.isJsonArray() && formDatas.size() > 0){
-			validate((JsonObject) formDatas.get(0), "PAGENAVIGATE", "mac"); //Validate the Analytics call. Does validation for a specific parameter only for Demo
+			int size = formDatas.size();
+			for (JsonElement jsonElement : formDatas) {
+				JsonObject obj = (JsonObject)jsonElement;
+				if(obj.has("events")){
+					if(obj.get("events").getAsString().equalsIgnoreCase("event1")){
+						//Validate the Analytics call. Does validation for a specific parameter only for Demo
+						validate(obj, "PAGENAVIGATE", pageNavigate); 			
+					}
+				}				
+			}
 		}else{
 			customReport("ERROR", "Analytics Validation for PAGENAVIGATE failed. Nothing was recorded");
 		}
@@ -104,8 +119,8 @@ public class AppleTest {
 	}
 
 	private static By getBy(String elemName) {
-		if (elemName.equalsIgnoreCase("MAC_LINK")) {
-			return By.className("ac-gn-link-mac");
+		if (elemName.equalsIgnoreCase("SUPPORT_LINK")) {
+			return By.linkText("SUPPORT");
 		}
 
 		return null;

@@ -68,7 +68,7 @@ let httpUserRequest = function ( userRequest, userResponse ) {
 			userResponse.writeHead('200');
 			userResponse.end();
 		});			
-	}else{
+	}else if(path === '/stop'){
 		console.log('stoping capture'); //Handle for 'stop' request from Selenium
 		shouldRecord = false;
 		userRequest.on('data', (chunk) => {}); //No data is expected in 'stop' request so ignoring
@@ -78,6 +78,12 @@ let httpUserRequest = function ( userRequest, userResponse ) {
 			analyticsData = [];
 			userResponse.end();
 		});						
+	}else{
+		userRequest.on('data', (chunk) => {}); //No data is expected in 'stop' request so ignoring
+		userRequest.on('end', (chunk) => {
+			userResponse.writeHead('200');
+			userResponse.end();
+		});			
 	}
 	return;		
   }	  
